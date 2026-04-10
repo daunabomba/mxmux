@@ -1,4 +1,7 @@
 module;
+#include <syslog.h>
+
+#include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -6,7 +9,6 @@ module;
 #include <chrono>
 #include <iostream>
 #include <sstream>
-#include <syslog.h>
 
 export module logger;
 

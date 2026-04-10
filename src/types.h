@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include "endians.h"
+
 #include <array>
+#include <algorithm>
 #include <cstring>
 #include <linux/input.h>
 #include <netinet/in.h>

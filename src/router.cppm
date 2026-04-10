@@ -6,6 +6,7 @@ module;
 #include <array>
 #include <chrono>
 #include <memory>
+#include <mutex>
 #include <string>
 
 import evdev;

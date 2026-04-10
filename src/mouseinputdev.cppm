@@ -1,9 +1,12 @@
 module;
 #include "exception.h"
-#include <cstring>
+
 #include <fcntl.h>
 #include <linux/uinput.h>
 #include <unistd.h>
+
+#include <cstring>
+#include <memory>
 
 import evdev;
 

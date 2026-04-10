@@ -4,10 +4,13 @@ module;
 #include <sys/timerfd.h>
 #include <unistd.h>
 
+#include <atomic>
 #include <deque>
 #include <functional>
 #include <map>
 #include <memory>
+#include <mutex>
+#include <string>
 #include <thread>
 
 #include <cassert>

@@ -1,6 +1,8 @@
 module;
 #include "exception.h"
 
+#include <unistd.h>
+
 #include <chrono>
 #include <memory>
 #include <string>

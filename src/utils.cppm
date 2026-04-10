@@ -1,14 +1,14 @@
 module;
 #include "types.h"
 
+#include <sys/epoll.h>
+#include <errno.h>
+
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <errno.h>
-#include <string.h>
 #include <cassert>
-#include <sys/epoll.h>
 
 import logger;
 

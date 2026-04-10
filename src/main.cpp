@@ -1,5 +1,6 @@
-
 #include "exception.h"
+
+#include <unistd.h>
 
 #include <iostream>
 #include <memory>

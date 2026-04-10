@@ -1,4 +1,7 @@
 module;
+#include <unistd.h>
+
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
