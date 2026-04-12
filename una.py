@@ -12,20 +12,20 @@ def get_env():
     env["PATH"] = f"{host_bin}:{env.get('PATH', '')}"
     return env
 
-def target_configure(staging_dir: Path, target_dir: Path):
-    print(f"mxmux: target_configure")
+def target_configure(staging_dir: Path, target_dir: Path, arch="x32"):
+    print(f"mxmux: target_configure ({arch})")
     repo_root = Path(__file__).parent
-    build_path = repo_root / "build"
+    build_path = repo_root / f"build-{arch}"
     build_path.mkdir(parents=True, exist_ok=True)
     
     project_root = repo_root.parent.parent
-    musl_cfg = project_root / "bld" / "muslx32.cfg"
+    musl_cfg = project_root / "bld" / f"musl_{arch}.cfg"
 
     cmd = [
         "cmake",
         "-G", "Ninja",
         "-S", ".", 
-        "-B", "build",
+        "-B", f"build-{arch}",
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         
@@ -38,18 +38,18 @@ def target_configure(staging_dir: Path, target_dir: Path):
 
     subprocess.run(cmd, cwd=repo_root, env=get_env(), check=True)
 
-def target_build(staging_dir: Path, target_dir: Path):
-    print(f"mxmux: target_build")
+def target_build(staging_dir: Path, target_dir: Path, arch="x32"):
+    print(f"mxmux: target_build ({arch})")
     repo_root = Path(__file__).parent
-    build_path = repo_root / "build"
+    build_path = repo_root / f"build-{arch}"
     
     make_jobs = multiprocessing.cpu_count()
     subprocess.run(["ninja", f"-j{make_jobs}"], cwd=build_path, env=get_env(), check=True)
 
-def target_install(staging_dir: Path, target_dir: Path):
-    print(f"mxmux: target_install (to staging and target)")
+def target_install(staging_dir: Path, target_dir: Path, arch="x32"):
+    print(f"mxmux: target_install ({arch})")
     repo_root = Path(__file__).parent
-    build_path = repo_root / "build"
+    build_path = repo_root / f"build-{arch}"
     
     # 1. Install to staging (useful if other projects need it)
     subprocess.run(["env", f"DESTDIR={staging_dir}", "ninja", "install"], cwd=build_path, env=get_env(), check=True)
