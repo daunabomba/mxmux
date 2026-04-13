@@ -2,6 +2,8 @@ module;
 
 #include "types.h"
 
+#include <errno.h>
+
 #include <cassert>
 #include <cstring>
 #include <arpa/inet.h>
