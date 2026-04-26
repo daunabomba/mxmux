@@ -3,6 +3,7 @@ import os
 import multiprocessing
 import shutil
 from pathlib import Path
+from mods import colors
 
 def get_env():
     env = os.environ.copy()
@@ -13,7 +14,7 @@ def get_env():
     return env
 
 def target_configure(staging_dir: Path, target_dir: Path, arch="x32"):
-    print(f"mxmux: target_configure ({arch})")
+    colors.info(f"mxmux: target_configure ({arch})")
     repo_root = Path(__file__).parent
     build_path = repo_root / f"build-{arch}"
     build_path.mkdir(parents=True, exist_ok=True)
@@ -39,7 +40,7 @@ def target_configure(staging_dir: Path, target_dir: Path, arch="x32"):
     subprocess.run(cmd, cwd=repo_root, env=get_env(), check=True)
 
 def target_build(staging_dir: Path, target_dir: Path, arch="x32"):
-    print(f"mxmux: target_build ({arch})")
+    colors.info(f"mxmux: target_build ({arch})")
     repo_root = Path(__file__).parent
     build_path = repo_root / f"build-{arch}"
     
@@ -47,7 +48,7 @@ def target_build(staging_dir: Path, target_dir: Path, arch="x32"):
     subprocess.run(["ninja", f"-j{make_jobs}"], cwd=build_path, env=get_env(), check=True)
 
 def target_install(staging_dir: Path, target_dir: Path, arch="x32"):
-    print(f"mxmux: target_install ({arch})")
+    colors.info(f"mxmux: target_install ({arch})")
     repo_root = Path(__file__).parent
     build_path = repo_root / f"build-{arch}"
     
