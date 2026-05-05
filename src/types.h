@@ -177,7 +177,7 @@ struct IpAddr {
     bool operator==(IpAddr const &rhs) const { return d8 == rhs.d8; }
 
     void setIpV4(in_addr_t &addr) {
-        std::copy(ip4Prefix.begin(), ip4Prefix.end(), d8.begin());
+        std::memcpy(d8.data(), ip4Prefix.data(), ip4Prefix.size());
         auto &d32Addr = *reinterpret_cast<in_addr_t *>(&d8[ADDR_LEN_IPV4_PREFIX]);
         d32Addr = addr;
     };
