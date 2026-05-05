@@ -2,6 +2,7 @@ module;
 
 #include "exception.h"
 
+#include <errno.h>
 #include <fcntl.h>
 #include <linux/uinput.h>
 #include <string>

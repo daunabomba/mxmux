@@ -5,6 +5,7 @@ module;
 #include <functional>
 #include <memory>
 
+import std.memory.shared_ptr;
 import logger;
 import utils;
 
