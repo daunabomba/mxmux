@@ -10,6 +10,7 @@ module;
 #include <syslog.h>
 #include <thread>
 #include <vector>
+#include <memory>
 
 export module logger;
 

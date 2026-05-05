@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <cstddef>
 /**
  * Encrypts a message with associated data.
  * @param key                    256 bit encryption key.
