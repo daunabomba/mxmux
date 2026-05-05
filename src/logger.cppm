@@ -123,9 +123,7 @@ void Logger::doLog(LogType type, std::string const &what) {
         std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch();
     std::time_t secs = nowNs / 1s;
     auto nsecs = (nowNs % 1s).count();
-    lock.lock();
     std::tm *local_time_now = std::localtime(&secs);
-    lock.unlock();
     std::locale loc;
     const std::time_put<char> &tmput{std::use_facet<std::time_put<char>>(loc)};
     std::stringbuf line;
@@ -137,7 +135,6 @@ void Logger::doLog(LogType type, std::string const &what) {
         os << "0";
     }
     os << nsecs;
-    lock.lock();
     std::size_t tid = std::numeric_limits<std::size_t>::max();
     for (std::size_t i = 0; i < Logger::threadIds.size(); ++i) {
         if (threadIds.at(i) == std::this_thread::get_id()) {
@@ -151,7 +148,5 @@ void Logger::doLog(LogType type, std::string const &what) {
     os << "\t" << what << "\n";
     lock.lock();
     syslog(toSyslogPriority(type), "%s", line.str().c_str());
-    lock.unlock();
-    std::cerr << line.str();
     lock.unlock();
 }
