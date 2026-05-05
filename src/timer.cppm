@@ -6,6 +6,7 @@ module;
 #include <string>
 #include <sys/timerfd.h>
 #include <unistd.h>
+#include <cstdint>
 
 import engine;
 import logger;
@@ -95,11 +96,11 @@ std::shared_ptr<PeriodicTimer> PeriodicTimer::create(std::chrono::nanoseconds in
     itimerspec newTimer{};
 
     if (period != 0ns) {
-        newTimer.it_interval.tv_sec = period / 1s;
-        newTimer.it_interval.tv_nsec = (period % 1s).count();
+        newTimer.it_interval.tv_sec = static_cast<decltype(newTimer.it_interval.tv_sec)>(std::chrono::duration_cast<std::chrono::seconds>(period).count());
+        newTimer.it_interval.tv_nsec = static_cast<decltype(newTimer.it_interval.tv_nsec)>((period % 1s).count());
     }
-    newTimer.it_value.tv_sec = initial / 1s;
-    newTimer.it_value.tv_nsec = (initial % 1s).count();
+    newTimer.it_value.tv_sec = static_cast<decltype(newTimer.it_value.tv_sec)>(std::chrono::duration_cast<std::chrono::seconds>(initial).count());
+    newTimer.it_value.tv_nsec = static_cast<decltype(newTimer.it_value.tv_nsec)>((initial % 1s).count());
 
     throwIf(::timerfd_settime(timerFd, 0, &newTimer, nullptr), StringException("Periodic timer settime"));
 
@@ -113,7 +114,7 @@ PeriodicTimer::~PeriodicTimer() {}
 void PeriodicTimer::destroy() { Engine::remove(self); }
 
 void PeriodicTimer::handleRead() {
-    uint64_t expirations;
+    std::uint64_t expirations;
     ssize_t s = ::read(fd, &expirations, sizeof(expirations));
     if (s != sizeof(expirations)) {
         throw std::runtime_error("read from timerfd failed");
@@ -133,8 +134,8 @@ std::shared_ptr<OneShotTimer> OneShotTimer::create(std::chrono::nanoseconds init
     auto const timerFd = ::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
     itimerspec newTimer{};
 
-    newTimer.it_value.tv_sec = initial / 1s;
-    newTimer.it_value.tv_nsec = (initial % 1s).count();
+    newTimer.it_value.tv_sec = static_cast<decltype(newTimer.it_value.tv_sec)>(std::chrono::duration_cast<std::chrono::seconds>(initial).count());
+    newTimer.it_value.tv_nsec = static_cast<decltype(newTimer.it_value.tv_nsec)>((initial % 1s).count());
 
     throwIf(::timerfd_settime(timerFd, 0, &newTimer, nullptr), StringException("OneShot timer settime"));
 
@@ -148,7 +149,7 @@ OneShotTimer::~OneShotTimer() {}
 void OneShotTimer::destroy() { Engine::remove(self); }
 
 void OneShotTimer::handleRead() {
-    uint64_t expirations;
+    std::uint64_t expirations;
     ssize_t s = ::read(fd, &expirations, sizeof(expirations));
     if (s != sizeof(expirations)) {
         throw std::runtime_error("read from timerfd failed");
@@ -165,8 +166,8 @@ void OneShotTimer::reset(std::chrono::nanoseconds timeout) {
     if (ref) {
         itimerspec newTimer{};
 
-        newTimer.it_value.tv_sec = timeout / 1s;
-        newTimer.it_value.tv_nsec = (timeout % 1s).count();
+        newTimer.it_value.tv_sec = static_cast<decltype(newTimer.it_value.tv_sec)>(std::chrono::duration_cast<std::chrono::seconds>(timeout).count());
+        newTimer.it_value.tv_nsec = static_cast<decltype(newTimer.it_value.tv_nsec)>((timeout % 1s).count());
 
         throwIf(::timerfd_settime(fd, 0, &newTimer, nullptr), StringException("OneShot timer reset settime"));
     } else {
