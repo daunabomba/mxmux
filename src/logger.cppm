@@ -49,8 +49,16 @@ private:
     Logger();
     void doLog(LogType type, std::string const &what);
     void doSetMask(LogType const level);
+    static int toSyslogPriority(LogType type) {
+        switch (type) {
+            case LogType::CRITICAL: return LOG_LOCAL0 | LOG_CRIT;
+            case LogType::ERROR:    return LOG_LOCAL0 | LOG_ERR;
+            case LogType::WARNING:  return LOG_LOCAL0 | LOG_WARNING;
+            case LogType::DEBUG:    return LOG_LOCAL0 | LOG_DEBUG;
+            default:                return LOG_LOCAL0 | LOG_INFO;
+        }
+    }
 
-private:
     std::vector<std::thread::id> threadIds;
     std::mutex lock;
     LogType level = LogType::NOTHING;
@@ -74,7 +82,7 @@ void Logger::start() {
         return;
     }
     Logger::theLogger = new Logger;
-    openlog("gatecont", LOG_PID | LOG_CONS, LOG_USER);
+    openlog("mx", LOG_PID | LOG_CONS, LOG_USER);
 }
 
 void Logger::setMask(LogType const mask) { Logger::theLogger->doSetMask(mask); }
@@ -141,9 +149,9 @@ void Logger::doLog(LogType type, std::string const &what) {
         tid = Logger::threadIds.size() - 1;
     }
     os << "\t" << what << "\n";
-    // lock.lock();
-    // syslog(LOG_LOCAL0, line.str().c_str());
-    // lock.unlock();
+    lock.lock();
+    syslog(toSyslogPriority(type), line.str().c_str());
+    lock.unlock();
     std::cerr << line.str();
     lock.unlock();
 }
