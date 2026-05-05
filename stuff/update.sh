@@ -48,7 +48,7 @@ esz=$(stat --format="%s" mxev-0.0.0.${newver}.ebuild)
 echo "AUX mxev.tar.zst ${fsz} BLAKE2B ${fb2} SHA512 ${fs5}" >> Manifest
 echo "EBUILD mxev-0.0.0.${newver}.ebuild ${esz} BLAKE2B ${eb2} SHA512 ${es5}" >> Manifest
 new_key_file="$(mktemp)"
-dd if=/dev/urandom of="${new_key_file}" bs=32 count=1 2&>1 > /dev/null
+dd if=/dev/urandom of="${new_key_file}" bs=32 count=1 > /dev/null 2>&1
 mx_key_file="/etc/mxev.key"
 for i in aq ar as ; do 
     scp -q "${new_key_file}" root@[::1]:/mnt/work/sdisk/os/"${i}""${mx_key_file}"
