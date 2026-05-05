@@ -5,6 +5,7 @@ module;
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <unordered_map>
 
 export module mxsrv.mxarpwatch;
 

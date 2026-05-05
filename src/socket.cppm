@@ -184,9 +184,11 @@ int Socket::receiveDatagram(InetDest &whereFrom, Bytes &data) const {
     pErrorLog("Socket::receiveDatagram", static_cast<int>(numReceived), fd);
 
     struct cmsghdr *cmsg;
+#if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wcast-align"
 #pragma clang diagnostic ignored "-Wsign-compare"
+#endif
     for (cmsg = CMSG_FIRSTHDR(&msg); cmsg != nullptr && cmsg->cmsg_level >= 0; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
         if (cmsg->cmsg_level == IPPROTO_IPV6 && cmsg->cmsg_type == IPV6_PKTINFO) {
             // assert(false);
@@ -196,7 +198,9 @@ int Socket::receiveDatagram(InetDest &whereFrom, Bytes &data) const {
             // x.ifIndex = pktInfo.ipi6_ifindex;
         }
     }
+#if defined(__clang__)
 #pragma clang diagnostic pop
+#endif
 
     whereFrom.addr.setFromNetwork(addr.addrV6.sin6_addr);
     whereFrom.port = addr.addrV6.sin6_port;

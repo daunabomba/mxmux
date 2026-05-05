@@ -1,8 +1,11 @@
 #include "exception.h"
 #include "types.h"
 
+#include <unistd.h>
+
 #include <iostream>
 #include <memory>
+#include <climits>
 #include <fstream>
 #include <array>
 
@@ -15,6 +18,14 @@ import tcplistener;
 import udpsocket;
 import arpsocket;
 import resolver;
+
+static uint16_t to_port_no(const std::string &str) {
+    int val = std::stoi(str);
+    if (val < 0 || val > USHRT_MAX) {
+        val = 0;
+    }
+    return static_cast<uint16_t>(val);
+}
 
 int main(int const argc, char const *const *argv) {
     try {
@@ -82,9 +93,9 @@ int main(int const argc, char const *const *argv) {
 
         auto mxDest = Socket::destFromString(argv[1], destinationPort);
 
-        runUnit("SmtpProxy", [listeningPort, &mxDest]() {
+        [listeningPort, &mxDest]() {
             TcpListener::create(listeningPort, [&mxDest]() { return std::make_shared<SmtpProxy>(mxDest); });
-        });
+        }();
 #endif
         Engine::start();
         return 0;

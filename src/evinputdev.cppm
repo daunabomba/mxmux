@@ -8,6 +8,8 @@ module;
 #include <string>
 #include <unistd.h>
 
+#include <memory>
+
 import logger;
 import evdev;
 import utils;
