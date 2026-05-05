@@ -51,7 +51,7 @@ new_key_file="$(mktemp)"
 dd if=/dev/urandom of="${new_key_file}" bs=32 count=1 > /dev/null 2>&1
 mx_key_file="/etc/mxev.key"
 for i in aq ar as ; do 
-    scp -q "${new_key_file}" root@[::1]:/mnt/work/sdisk/os/"${i}""${mx_key_file}"
+    [ ! -f /mnt/work/sdisk/os/"${i}""${mx_key_file}" ] && scp -q "${new_key_file}" root@[::1]:/mnt/work/sdisk/os/"${i}""${mx_key_file}"
     ssh root@::1 chown mxev:mxev /mnt/work/sdisk/os/"${i}""${mx_key_file}"
     ssh root@::1 chmod 400 /mnt/work/sdisk/os/"${i}""${mx_key_file}"
     ssh root@::1 rm /mnt/work/sdisk/os/${i}/etc/local/overlay/sys-apps/mxev/*.ebuild
