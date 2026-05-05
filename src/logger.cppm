@@ -150,7 +150,7 @@ void Logger::doLog(LogType type, std::string const &what) {
     }
     os << "\t" << what << "\n";
     lock.lock();
-    syslog(toSyslogPriority(type), line.str().c_str());
+    syslog(toSyslogPriority(type), "%s", line.str().c_str());
     lock.unlock();
     std::cerr << line.str();
     lock.unlock();
