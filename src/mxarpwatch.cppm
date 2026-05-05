@@ -2,8 +2,8 @@ module;
 
 #include "types.h"
 
-#include <memory>
 #include <mutex>
+#include <memory>
 #include <optional>
 #include <unordered_map>
 

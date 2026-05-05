@@ -5,6 +5,8 @@ module;
 
 #include <map>
 #include <memory>
+#include <mutex>
+#include <algorithm>
 #include <unordered_map>
 
 import logger;

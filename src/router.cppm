@@ -4,6 +4,7 @@ module;
 #include "types.h"
 #include <sys/timerfd.h>
 
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <memory>
