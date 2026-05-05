@@ -1,12 +1,9 @@
 module;
 #include "exception.h"
-
+#include <cstring>
 #include <fcntl.h>
 #include <linux/uinput.h>
 #include <unistd.h>
-
-#include <cstring>
-#include <memory>
 
 import evdev;
 
@@ -17,6 +14,7 @@ public:
     KbdInputDev() = delete;
     KbdInputDev(unsigned short const num, char const *const devName, RouterIf& newRouter);
     virtual ~KbdInputDev();
+    bool hasRead() const override { return false; }
 };
 
 KbdInputDev::KbdInputDev(unsigned short const num, char const *const devName, RouterIf& newRouter) :

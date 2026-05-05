@@ -1,6 +1,5 @@
 module;
 #include "types.h"
-
 #include <deque>
 #include <memory>
 #include <mutex>
@@ -15,21 +14,21 @@ export module tcpstream;
 export class TcpStream;
 
 export class TcpStreamIf : public std::enable_shared_from_this<TcpStreamIf> {
-  public:
+public:
     virtual ~TcpStreamIf() {}
     friend class TcpStream;
     virtual void received(Bytes const &) = 0;
     virtual void writeComplete() = 0;
     virtual void disconnected() = 0;
 
-  protected:
+protected:
     std::weak_ptr<TcpStream> tcpStream;
 };
 
 export class TcpStream : public Socket {
     friend class TcpStreamIf;
 
-  public:
+public:
     static void create(std::shared_ptr<TcpStreamIf> const &newClient, int const newFd);
     static void create(std::shared_ptr<TcpStreamIf> const &newClient, InetDest const &dest);
     static void create(std::shared_ptr<TcpStreamIf> const &newClient, InetDest const &dest, InetDest const &fauxOrigin);
@@ -44,13 +43,13 @@ export class TcpStream : public Socket {
     InetDest endPoint() const;
     bool writeQueueEmpty();
 
-  protected:
+protected:
     virtual void handleRead() override;
     virtual void handleWrite() override;
     virtual void handleError() override;
-    virtual bool waitingOutEvent() override;
+    virtual bool hasPolledOut() const override;
 
-  private:
+private:
     std::shared_ptr<TcpStreamIf> client;
     std::mutex writeLock;
     std::mutex readLock;
@@ -105,10 +104,11 @@ void TcpStream::create(std::shared_ptr<TcpStreamIf> const &client, InetDest cons
     Engine::add(sockRef);
 }
 
-TcpStream::TcpStream(std::shared_ptr<TcpStreamIf> const &newClient) : Runnable(Socket::createSocket(TCP)), Socket(TCP), client(newClient) {}
+TcpStream::TcpStream(std::shared_ptr<TcpStreamIf> const &newClient)
+    : Runnable(Socket::createSocket(TCP)), Socket(TCP), client(newClient) {}
 
-TcpStream::TcpStream(std::shared_ptr<TcpStreamIf> const &newClient, int const newFd) : Runnable(newFd),
-                  Socket(TCP) , client(newClient) {
+TcpStream::TcpStream(std::shared_ptr<TcpStreamIf> const &newClient, int const newFd)
+    : Runnable(newFd), Socket(TCP), client(newClient) {
     makeNonBlocking();
     keepAlive();
 }
@@ -181,8 +181,7 @@ void TcpStream::handleWrite() {
     }
 }
 
-bool TcpStream::waitingOutEvent() {
-    std::lock_guard<std::mutex> sync(writeLock);
+bool TcpStream::hasPolledOut() const {
     return (blocked || !once || !connected) && !disconnecting;
 }
 

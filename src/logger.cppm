@@ -1,37 +1,55 @@
 module;
-#include <syslog.h>
 
-#include <memory>
-#include <mutex>
-#include <string>
-#include <thread>
-#include <vector>
+#include <cstdint>
+
 #include <chrono>
 #include <iostream>
+#include <mutex>
 #include <sstream>
+#include <string>
+#include <syslog.h>
+#include <thread>
+#include <vector>
 
 export module logger;
 
 export class Logger final {
 
-  public:
+public:
     enum class LogType { NOTHING = 0, CRITICAL, ERROR, WARNING, DEBUG, EVERYTHING };
-    static void logCritical(const std::string &what);
-    static void logError(const std::string &what);
-    static void logWarn(const std::string &what);
-    static void logDebug(const std::string &what);
-    static void log(const LogType type, const std::string what);
-    static void setMask(const LogType mask);
+    static std::string to_string(LogType type) {
+        switch (type) {
+        case LogType::NOTHING:
+            return "NOTHING";
+        case LogType::CRITICAL:
+            return "CRITICAL";
+        case LogType::ERROR:
+            return "ERROR";
+        case LogType::WARNING:
+            return "WARNING";
+        case LogType::DEBUG:
+            return "DEBUG";
+        case LogType::EVERYTHING:
+            return "EVERYTHING";
+        }
+        return "UNKNOWN";
+    }
+    static void logCritical(std::string const &what);
+    static void logError(std::string const &what);
+    static void logWarn(std::string const &what);
+    static void logDebug(std::string const &what);
+    static void log(LogType const type, std::string const &what);
+    static void setMask(LogType const mask);
 
     static void start();
     static void stop();
-  private:
+
+private:
     Logger();
-    void doLog(LogType type, const std::string what);
-    void doSetMask(const LogType level);
+    void doLog(LogType type, std::string const &what);
+    void doSetMask(LogType const level);
 
-
-  private:
+private:
     std::vector<std::thread::id> threadIds;
     std::mutex lock;
     LogType level = LogType::NOTHING;
@@ -43,7 +61,6 @@ export const auto logError = Logger::logError;
 export const auto logWarn = Logger::logWarn;
 export const auto logDebug = Logger::logDebug;
 
-
 using namespace std::chrono_literals;
 
 Logger *Logger::theLogger = nullptr;
@@ -53,40 +70,43 @@ Logger::Logger() {}
 void Logger::start() {
     if (Logger::theLogger != nullptr) {
         throw std::runtime_error("start called when already started");
+        return;
     }
     Logger::theLogger = new Logger;
     openlog("gatecont", LOG_PID | LOG_CONS, LOG_USER);
 }
 
-void Logger::setMask(const LogType mask) { Logger::theLogger->doSetMask(mask); }
+void Logger::setMask(LogType const mask) { Logger::theLogger->doSetMask(mask); }
 
-void Logger::doSetMask(const LogType newLevel) { this->level = newLevel; }
+void Logger::doSetMask(LogType const newLevel) { this->level = newLevel; }
 
 void Logger::stop() {
     if (Logger::theLogger == nullptr) {
         throw std::runtime_error("stop called before start");
+        return;
     }
     std::unique_ptr<Logger> tmp(Logger::theLogger);
     closelog();
     Logger::theLogger = nullptr;
 }
 
-void Logger::logCritical(const std::string &what) { Logger::log(LogType::CRITICAL, what); }
+void Logger::logCritical(std::string const &what) { Logger::log(LogType::CRITICAL, what); }
 
-void Logger::logError(const std::string &what) { Logger::log(LogType::ERROR, what); }
+void Logger::logError(std::string const &what) { Logger::log(LogType::ERROR, what); }
 
-void Logger::logWarn(const std::string &what) { Logger::log(LogType::WARNING, what); }
+void Logger::logWarn(std::string const &what) { Logger::log(LogType::WARNING, what); }
 
-void Logger::logDebug(const std::string &what) { Logger::log(LogType::DEBUG, what); }
+void Logger::logDebug(std::string const &what) { Logger::log(LogType::DEBUG, what); }
 
-void Logger::log(const LogType type, const std::string what) {
+void Logger::log(LogType const type, std::string const &what) {
     if (Logger::theLogger == nullptr) {
-        throw std::runtime_error("need to call start first or start failed");
+        std::cerr << Logger::to_string(type) << " " << what << std::endl;
+        return;
     }
     Logger::theLogger->doLog(type, what);
 }
 
-void Logger::doLog(LogType type, const std::string what) {
+void Logger::doLog(LogType type, std::string const &what) {
     if (type > level) {
         return;
     }
@@ -103,7 +123,7 @@ void Logger::doLog(LogType type, const std::string what) {
     std::ostream os(&line);
     std::string fmt("%Y-%Om-%Od %OH:%OM:%OS.");
     tmput.put(os, os, '.', local_time_now, fmt.data(), fmt.data() + fmt.length());
-    auto start = nsecs == 0 ? static_cast<int64_t>(1) : nsecs;
+    auto start = nsecs == 0 ? static_cast<std::int64_t>(1) : nsecs;
     for (auto div = start; div < 100000000; div = div * 10) {
         os << "0";
     }

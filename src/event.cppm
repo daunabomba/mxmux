@@ -4,9 +4,9 @@ module;
 #include <cstdint>
 #include <functional>
 #include <memory>
-#include <string>
 
 import logger;
+import utils;
 
 export module event;
 
@@ -19,12 +19,14 @@ public:
     Runnable(int const newFd) : fd(newFd) {}
     virtual ~Runnable();
 
-    public:
+public:
     virtual void handleError() = 0;
     virtual void handleRead() = 0;
     virtual void handleWrite() = 0;
-    virtual bool waitingOutEvent() = 0;
+    virtual bool hasPolledOut() const = 0;
+    virtual bool hasRead() const = 0;
     virtual int getLastError() const = 0;
+    virtual void preShutdown() = 0;
 
 public:
     std::weak_ptr<Runnable> self;
@@ -44,10 +46,7 @@ public:
     std::function<void()> func;
 };
 
-
-
 Runnable::~Runnable() {
-    logDebug("Runnable::~Runnable() " + std::to_string(fd));
     if (fd >= 0) {
         ::close(fd);
     }

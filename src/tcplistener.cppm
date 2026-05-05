@@ -13,21 +13,19 @@ import tcpstream;
 export module tcplistener;
 
 export class TcpListener final : virtual public Socket {
-  public:
+public:
     static void create(uint16_t const port, std::function<std::shared_ptr<TcpStreamIf>()> const &clientFactory);
     virtual ~TcpListener() override;
     TcpListener(uint16_t const port, std::function<std::shared_ptr<TcpStreamIf>()> const &clientFactory);
 
-  private:
+private:
     virtual void handleRead() override;
 
-  private:
+private:
     void createStream(const int newFd);
     std::function<std::shared_ptr<TcpStreamIf>()> clientFactory;
     std::mutex lock;
 };
-
-
 
 void TcpListener::create(uint16_t const port, std::function<std::shared_ptr<TcpStreamIf>()> const &clientFactory) {
     std::shared_ptr<Socket> listenRef = std::make_shared<TcpListener>(port, clientFactory);
@@ -36,7 +34,7 @@ void TcpListener::create(uint16_t const port, std::function<std::shared_ptr<TcpS
 }
 
 TcpListener::TcpListener(uint16_t const port, std::function<std::shared_ptr<TcpStreamIf>()> const &cf)
-    : Runnable( createSocket(TCP)), Socket(TCP), clientFactory(cf) {
+    : Runnable(createSocket(TCP)), Socket(TCP), clientFactory(cf) {
     logDebug("TcpListener::TcpListener on port " + std::to_string(port));
     reuseAddress();
     bind(port);

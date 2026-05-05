@@ -1,6 +1,5 @@
 module;
 #include "types.h"
-
 #include <atomic>
 #include <deque>
 #include <memory>
@@ -32,9 +31,9 @@ protected:
 
 export class UdpSocket final : virtual public Socket {
 public:
-    static void create(uint16_t const localPort, std::shared_ptr<UdpSocketIf> const &client);
-    static void create(InetDest const &dest, std::shared_ptr<UdpSocketIf> const &client);
-    UdpSocket(std::shared_ptr<UdpSocketIf> const &client);
+    static void create(uint16_t const localPort, std::shared_ptr<UdpSocketIf> const &newClient);
+    static void create(InetDest const &dest, std::shared_ptr<UdpSocketIf> const &newClient);
+    UdpSocket(std::shared_ptr<UdpSocketIf> const &newClient);
     void queueWrite(InetDest const &dest, Bytes const &data);
     void queueWrite(Bytes const &data);
     void disconnect();
@@ -42,14 +41,13 @@ public:
     virtual void handleRead() override;
     virtual void handleWrite() override;
     virtual void handleError() override;
-    virtual bool waitingOutEvent() override;
     void doWrite(const InetDest &dest, const Bytes &data);
 
 private:
     void bindAndAdd(std::shared_ptr<UdpSocket> const &me, uint16_t const localPort,
-                    std::shared_ptr<UdpSocketIf> const &client);
+                    std::shared_ptr<UdpSocketIf> const &newClient);
     void connectAndAdd(std::shared_ptr<UdpSocket> const &me, InetDest const &dest,
-                       std::shared_ptr<UdpSocketIf> const &client);
+                       std::shared_ptr<UdpSocketIf> const &newClient);
 
 private:
     std::shared_ptr<UdpSocketIf> client;
@@ -59,11 +57,10 @@ private:
     InetDest destAddr;
 };
 
-
-void UdpSocket::create(uint16_t const localPort, std::shared_ptr<UdpSocketIf> const &client) {
-    std::shared_ptr<UdpSocket> ref = std::make_shared<UdpSocket>(client);
-    ref->bindAndAdd(ref, localPort, client);
-    logDebug("UdpSocket::create listerning on " + std::to_string(localPort) );
+void UdpSocket::create(uint16_t const localPort, std::shared_ptr<UdpSocketIf> const &newClient) {
+    std::shared_ptr<UdpSocket> ref = std::make_shared<UdpSocket>(newClient);
+    ref->bindAndAdd(ref, localPort, newClient);
+    logDebug("UdpSocket::create listerning on " + std::to_string(localPort));
 }
 
 void UdpSocket::create(InetDest const &dest, std::shared_ptr<UdpSocketIf> const &newClient) {
@@ -126,7 +123,7 @@ void UdpSocket::disconnect() {
 }
 
 void UdpSocket::doWrite(InetDest const &dest, Bytes const &data) {
-    const auto actuallySent = sendDatagram(dest, data);
+    auto const actuallySent = sendDatagram(dest, data);
     pErrorLog("UdpSocket::doWrite", actuallySent, fd);
     if (actuallySent == -1) {
         if (errno == EWOULDBLOCK || errno == EAGAIN) {
@@ -153,11 +150,9 @@ void UdpSocket::handleWrite() {
         }
         const auto data = writeQueue.front();
         writeQueue.pop_front();
-        doWrite(data.first, data.second);
+        doWrite(std::get<0>(data), std::get<1>(data));
     }
 }
-
-bool UdpSocket::waitingOutEvent() { return false; }
 
 void UdpSocket::handleError() {
     logDebug("UdpSocket::handleError() is closed");

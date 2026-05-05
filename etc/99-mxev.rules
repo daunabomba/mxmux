@@ -1,0 +1,19 @@
+# /dev/uinput
+KERNEL=="uinput", GROUP="mxev", MODE="0660"
+
+ACTION!="remove", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="mxev-*-0", \
+TAG-="power-switch", TAG+="seat", ENV{ID_SEAT}="seat0", \
+PROGRAM="/opt/bin/get-mxev-name.sh %k", ENV{SANITIZED_NAME}="%c", SYMLINK+="input/by-id/%E{SANITIZED_NAME}"
+
+ACTION!="remove", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="mxev-*", ATTRS{name}!="*-0", \
+TAG-="power-switch", TAG+="seat", ENV{ID_SEAT}="noseat", \
+PROGRAM="/opt/bin/get-mxev-name.sh %k", ENV{SANITIZED_NAME}="%c", SYMLINK+="input/by-id/%E{SANITIZED_NAME}"
+
+#/dev/input/eventX
+ACTION!="remove",\
+ENV{ID_SEAT}="noseat", ENV{ID_AUTOSEAT}="", \
+ATTRS{idVendor}=="kvid", ATTRS{idProduct}=="kpid", GROUP="mxev", MODE="0660"
+
+ACTION!="remove", \
+ENV{ID_SEAT}="noseat", ENV{ID_AUTOSEAT}="", \
+ATTRS{idVendor}=="mpid", ATTRS{idProduct}=="mpid", GROUP="mxev", MODE="0660"

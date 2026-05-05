@@ -1,12 +1,9 @@
 module;
 #include "exception.h"
-
+#include <cstring>
 #include <fcntl.h>
 #include <linux/uinput.h>
 #include <unistd.h>
-
-#include <cstring>
-#include <memory>
 
 import evdev;
 
@@ -15,16 +12,13 @@ export module mouseinputdev;
 export class MouseInputDev final : public EvDev {
 public:
     MouseInputDev() = delete;
-    MouseInputDev(unsigned short const num, char const *const devName,
-        RouterIf& newRouter);
+    MouseInputDev(unsigned short const num, char const *const devName, RouterIf &newRouter);
     virtual ~MouseInputDev();
+    bool hasRead() const override { return false; }
 };
 
-
-
-MouseInputDev::MouseInputDev(unsigned short num, char const *const devName, RouterIf& newRouter) : 
-        Runnable(::open(devUinput, O_WRONLY | O_NONBLOCK)),
-        EvDev(newRouter) {
+MouseInputDev::MouseInputDev(unsigned short num, char const *const devName, RouterIf &newRouter)
+    : Runnable(::open(devUinput, O_WRONLY | O_NONBLOCK)), EvDev(newRouter) {
     throwIf(fd < 0, StringException("check /dev/uinput for mouse"));
 
     throwIf(0 > ::fcntl(fd, F_SETFL, O_NONBLOCK),

@@ -1,16 +1,15 @@
 module;
+
 #include "exception.h"
 
-#include <errno.h>
 #include <fcntl.h>
 #include <linux/uinput.h>
-#include <unistd.h>
-
-#include <memory>
 #include <string>
+#include <unistd.h>
 
 import logger;
 import evdev;
+import utils;
 
 export module evinputdev;
 
@@ -24,32 +23,26 @@ public:
     void setLeds(unsigned char ledsState) const;
     void handleError() override;
     void handleRead() override;
-public:
-    class DevNotPresentException {};
+    bool hasRead() const override { return true;};
+
 };
 
-
-
-EvInputDev::EvInputDev(char const *const name, RouterIf& newRouter) : 
-        Runnable(EvInputDev::tryConnect(name)),
-        EvDev(newRouter) { }
+EvInputDev::EvInputDev(char const *const name, RouterIf &newRouter)
+    : Runnable(EvInputDev::tryConnect(name)), EvDev(newRouter) {}
 
 int EvInputDev::tryConnect(char const *const devName) {
     auto newFd = ::open(devName, O_RDWR | O_NONBLOCK);
     if (newFd < 0) {
-        throw DevNotPresentException();
+        throwErrnoException(std::string("Unable to open " + std::string(devName)));
     }
 
     throwIf(0 > ::ioctl(newFd, EVIOCGRAB, true), StringException(std::string("Could not grab ")));
 
-    Logger::logCritical("EvInputDev::tryConnect " + std::string(devName) + " connected on " 
-            + std::to_string(newFd));
+    Logger::logCritical("EvInputDev::tryConnect " + std::string(devName) + " connected on " + std::to_string(newFd));
     return newFd;
 }
 
-EvInputDev::~EvInputDev() {
-
-}
+EvInputDev::~EvInputDev() {}
 
 void EvInputDev::setLeds(unsigned char ledsState) const {
     struct input_event ev;
@@ -97,9 +90,9 @@ void EvInputDev::handleRead() {
             }
         }
 
-        auto numEvents = static_cast<size_t>(nr) / sizeof(ev[0]);
+        auto numEvents = static_cast<std::size_t>(nr) / sizeof(ev[0]);
 
-        throwIf(numEvents == 0 || (static_cast<size_t>(nr) % sizeof(ev[0]) != 0), StringException("Read len wrong"));
+        throwIf(numEvents == 0 || (static_cast<std::size_t>(nr) % sizeof(ev[0]) != 0), StringException("Read len wrong"));
         router.handleInputEvent(this, ev, numEvents);
         if (sizeof(ev) / sizeof(ev[0]) > numEvents) {
             return;

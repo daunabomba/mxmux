@@ -4,13 +4,11 @@ module;
 #include <sys/timerfd.h>
 #include <unistd.h>
 
-#include <atomic>
 #include <deque>
 #include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
-#include <string>
 #include <thread>
 
 #include <cassert>
@@ -20,7 +18,6 @@ import logger;
 import event;
 import semaphore;
 import utils;
-
 
 export module engine;
 
@@ -85,7 +82,6 @@ public:
     std::atomic_bool exited;
 };
 
-
 Engine *Engine::theEngine = nullptr;
 
 Engine::Worker::~Worker() { thread.detach(); }
@@ -99,7 +95,7 @@ Engine::Engine()
 }
 
 Engine::~Engine() {
-    ::signal(SIGUSR1, SIG_DFL);
+    std::signal(SIGUSR1, SIG_DFL);
     ::close(epollFd);
     logDebug("Engine::~Engine()");
     Logger::stop();
@@ -120,8 +116,20 @@ void Engine::stop() {
 void signalHandler(int) { Engine::theEngine->doSignalHandler(); }
 
 void Engine::doSignalHandler() {
-    if (!stopping && epollTid == std::this_thread::get_id()) {
-        std::lock_guard<std::mutex> sync(evHashLock);
+    if(epollTid != std::this_thread::get_id()) {
+        return;
+    }
+    logDebug("Shutting down");
+
+    std::lock_guard<std::mutex> sync(evHashLock);
+
+    for (auto const &[key, runnablePtr] : eventHash) {
+        if (runnablePtr) {
+            runnablePtr->preShutdown();
+        }
+    }
+
+    if (!stopping) {
         stopping = true;
     }
 }
@@ -152,8 +160,7 @@ void Engine::stopWorkers() {
 }
 
 void Engine::doInit(unsigned int const minWorkersPerCpu) {
-    assert((eventHash.size() > NUM_ENGINE_EVENTS) &&
-           "Engine::doInit Need to Add() something before Go().");
+    assert((eventHash.size() > NUM_ENGINE_EVENTS) && "Engine::doInit Need to Add() something before Go().");
     std::signal(SIGPIPE, signalHandler);
     for (int i = SIGHUP; i < _NSIG; ++i) {
         std::signal(i, SIG_IGN);
@@ -213,7 +220,9 @@ void Engine::doRunAsync(Event const &event) {
 
 void Engine::doAdd(std::shared_ptr<Runnable> const &what) {
     if (!stopping) {
-        auto const epollOut = what->waitingOutEvent();
+        auto const needOut = what->hasPolledOut();
+        auto const needIn = what->hasRead();
+
         std::lock_guard<std::mutex> sync(evHashLock);
         what->self = what;
         what->evId = ++evCounter;
@@ -221,7 +230,9 @@ void Engine::doAdd(std::shared_ptr<Runnable> const &what) {
         bool const added = eventHash.emplace(what->evId, what).second;
         (void)added;
         assert(added && "Already exists in hash");
-        epoll_event event = {(epollOut ? EPOLLOUT : static_cast<decltype(EPOLLOUT)>(0)) | EPOLLONESHOT | EPOLLIN | EPOLLERR | EPOLLRDHUP | EPOLLET,
+        epoll_event event = {(needOut ? EPOLLOUT : static_cast<decltype(EPOLLOUT)>(0)) |
+                                 (needIn ? EPOLLIN : static_cast<decltype(EPOLLIN)>(0)) | EPOLLONESHOT | EPOLLERR |
+                                 EPOLLHUP | EPOLLRDHUP | EPOLLET,
                              {.u64 = what->evId}};
         pErrorThrow("epoll_ctl add", ::epoll_ctl(epollFd, EPOLL_CTL_ADD, what->fd, &event), epollFd);
     }
@@ -274,21 +285,25 @@ void Engine::run(Runnable *const sock, const uint32_t events) {
             return;
         }
     }
-    if ((events & EPOLLOUT) != 0) {
-        sock->handleWrite();
-    }
-    if ((events & (EPOLLIN)) != 0) {
-        sock->handleRead();
-    }
-    if ((events & EPOLLRDHUP) != 0 || (events & EPOLLERR) != 0) {
+
+    if ((events & EPOLLHUP) != 0 || (events & EPOLLRDHUP) != 0 || (events & EPOLLERR) != 0) {
         sock->handleError();
         pErrorLog("Engine::run", sock->getLastError(), sock->fd);
     } else {
-        bool const needOut = sock->waitingOutEvent();
+        if ((events & EPOLLOUT) != 0) {
+            sock->handleWrite();
+        } else if ((events & (EPOLLIN)) != 0) {
+            sock->handleRead();
+        }
+        bool const needOut = sock->hasPolledOut();
+        bool const needIn = sock->hasRead();
+
         std::lock_guard<std::mutex> sync(evHashLock);
         auto const it = eventHash.find(sock->evId);
         if (it != eventHash.end()) {
-            epoll_event event = {(needOut ? EPOLLOUT : static_cast<decltype(EPOLLOUT)>(0)) | EPOLLONESHOT | EPOLLIN | EPOLLERR | EPOLLRDHUP | EPOLLET,
+            epoll_event event = {(needOut ? EPOLLOUT : static_cast<decltype(EPOLLOUT)>(0)) |
+                                     (needIn ? EPOLLIN : static_cast<decltype(EPOLLIN)>(0)) | EPOLLONESHOT | EPOLLERR |
+                                     EPOLLHUP | EPOLLRDHUP | EPOLLET,
                                  {.u64 = sock->evId}};
             pErrorThrow("epoll_ctl mod", ::epoll_ctl(epollFd, EPOLL_CTL_MOD, sock->fd, &event), epollFd);
         }
@@ -337,7 +352,7 @@ void Engine::doEpoll() {
             }
             if (num >= 0) {
                 size_t const numEv = static_cast<size_t>(num);
-                for (size_t i = 0; i < numEv; ++i) {
+                for (std::size_t i = 0; i < numEv; ++i) {
                     newEvent(epEvents[i].data.u64, epEvents[i].events);
                 }
             } else if (num == -1 && (errno == EINTR || errno == EAGAIN)) {
