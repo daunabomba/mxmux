@@ -15,34 +15,35 @@ def get_env():
 
 def target_configure(staging_dir: Path, target_dir: Path, arch="x32"):
     colors.info(f"mxmux: target_configure ({arch})")
-    repo_root = Path(__file__).parent
+    repo_root = Path(__file__).parent.parent
     build_path = repo_root / f"build-{arch}"
     build_path.mkdir(parents=True, exist_ok=True)
-    
+
     project_root = repo_root.parent.parent
-    musl_cfg = project_root / "bld" / f"musl_{arch}.cfg"
+    musl_cfg = project_root / "bld" / f"nsd_x32/{arch}/musl.cfg"
+    musl_cxx_cfg = project_root / "bld" / f"nsd_x32/{arch}/musl_cxx.cfg"
 
     cmd = [
         "cmake",
         "-G", "Ninja",
-        "-S", ".", 
-        "-B", f"build-{arch}",
+        "-S", str(repo_root),
+        "-B", str(build_path),
         "-DCMAKE_INSTALL_PREFIX=/usr",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DMX_SMTPPROXY=ON",
-        
+
         # Cross-compilation settings using our clang/musl config
         "-DCMAKE_C_COMPILER=clang",
         "-DCMAKE_CXX_COMPILER=clang++",
-        f"-DCMAKE_C_FLAGS={os.environ.get('CFLAGS', '')}",
-        f"-DCMAKE_CXX_FLAGS={os.environ.get('CXXFLAGS', '')}",
+        f"-DCMAKE_C_FLAGS=--config={musl_cfg} -pipe -D_FILE_OFFSET_BITS=64",
+        f"-DCMAKE_CXX_FLAGS=--config={musl_cxx_cfg} -pipe -D_FILE_OFFSET_BITS=64",
     ]
 
-    subprocess.run(cmd, cwd=repo_root, env=get_env(), check=True)
+    subprocess.run(cmd, env=get_env(), check=True)
 
 def target_build(staging_dir: Path, target_dir: Path, arch="x32"):
     colors.info(f"mxmux: target_build ({arch})")
-    repo_root = Path(__file__).parent
+    repo_root = Path(__file__).parent.parent
     build_path = repo_root / f"build-{arch}"
     
     make_jobs = multiprocessing.cpu_count()
@@ -50,7 +51,7 @@ def target_build(staging_dir: Path, target_dir: Path, arch="x32"):
 
 def target_install(staging_dir: Path, target_dir: Path, arch="x32"):
     colors.info(f"mxmux: target_install ({arch})")
-    repo_root = Path(__file__).parent
+    repo_root = Path(__file__).parent.parent
     build_path = repo_root / f"build-{arch}"
     
     # 1. Install to staging (useful if other projects need it)
