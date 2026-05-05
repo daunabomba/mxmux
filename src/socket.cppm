@@ -4,10 +4,10 @@ module;
 #include "types.h"
 
 #include <arpa/inet.h>
-#include <cassert>
-#include <cstring>
+#include <errno.h>
 #include <fcntl.h>
 #include <ifaddrs.h>
+#include <arpa/inet.h>
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
 #include <net/if.h>
@@ -16,6 +16,9 @@ module;
 #include <netinet/tcp.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+#include <cassert>
+#include <cstring>
 
 import utils;
 import logger;
