@@ -28,6 +28,7 @@ static uint16_t to_port_no(const std::string &str) {
 }
 
 int main(int const argc, char const *const *argv) {
+    (void)to_port_no("0");
     try {
         Engine::init();
 #if defined(MX_ROUTER)
