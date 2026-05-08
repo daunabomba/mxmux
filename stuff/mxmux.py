@@ -19,9 +19,8 @@ def target_configure(staging_dir: Path, target_dir: Path, arch="x32"):
     build_path = repo_root / f"build-{arch}"
     build_path.mkdir(parents=True, exist_ok=True)
 
-    project_root = repo_root.parent.parent
-    musl_cfg = project_root / "bld" / f"nsd_x32/{arch}/musl.cfg"
-    musl_cxx_cfg = project_root / "bld" / f"nsd_x32/{arch}/musl_cxx.cfg"
+    musl_cfg = target_dir.parent / "musl.cfg"
+    musl_cxx_cfg = target_dir.parent / "musl_cxx.cfg"
 
     cmd = [
         "cmake",
