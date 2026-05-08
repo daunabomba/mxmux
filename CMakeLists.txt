@@ -47,7 +47,7 @@ set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   add_compile_options(-fmodules-ts)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-  add_compile_options(-fmodules)
+  add_compile_options(-fmodules -fmodules-cache-path=${CMAKE_BINARY_DIR}/clang-cache))
 endif()
 
 set(INCLUDE_DIRECTORIES src)
