@@ -169,14 +169,15 @@ int Socket::accept() const {
 int Socket::receiveDatagram(InetDest &whereFrom, Bytes &data) const {
     struct iovec iovec[]{{&data[0], data.size()}};
     uint8_t msgHeader[1024];
-    SocketAddress addr;
-    struct msghdr msg{&addr,
-                      sizeof(addr),
-                      &iovec[0],
-                      sizeof(iovec) / sizeof(iovec[0]),
-                      &msgHeader[0],
-                      sizeof(msgHeader) / sizeof(msgHeader[0]),
-                      0};
+    struct msghdr msg = {};
+    msg.msg_name = &addr;
+    msg.msg_namelen = sizeof(addr);
+    msg.msg_iov = &iovec[0];
+    msg.msg_iovlen = sizeof(iovec) / sizeof(iovec[0]);
+    msg.msg_control = &msgHeader[0];
+    msg.msg_controllen = sizeof(msgHeader) / sizeof(msgHeader[0]);
+    msg.msg_flags = 0;
+
     const auto numReceived = ::recvmsg(fd, &msg, 0);
     if (numReceived >= 0 && (data.size() > static_cast<decltype(data.size())>(numReceived))) {
         data.resize(static_cast<decltype(data.size())>(numReceived));
