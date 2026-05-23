@@ -332,7 +332,7 @@ std::string Socket::findArpInterface(InetDest const &ipv4Dest) {
     if (found) {
         ret = std::string(ifa->ifa_name);
     }
-    freeifaddres(ifaddr);
+    freeifaddrs(ifaddr);
     return ret;
 }
 
