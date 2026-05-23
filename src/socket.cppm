@@ -305,8 +305,10 @@ InetDest Socket::destFromString(std::string const &where, uint16_t const port) {
 std::string Socket::findArpInterface(InetDest const &ipv4Dest) {
     in_addr_t input_ip = ipv4Dest.addr.getIpV4();
     struct ifaddrs *ifaddr, *ifa;
+    std::string ret("");
+
     if (getifaddrs(&ifaddr) == -1) {
-        return "";
+        return ret;
     }
 
     bool found = false;
@@ -328,10 +330,10 @@ std::string Socket::findArpInterface(InetDest const &ipv4Dest) {
         }
     }
     if (found) {
-        return ifa->ifa_name;
-    } else {
-        return "";
+        ret = std::string(ifa->ifa_name);
     }
+    freeifaddres(ifaddr);
+    return ret;
 }
 
 void Socket::keepAlive() const {
