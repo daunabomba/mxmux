@@ -8,14 +8,14 @@ module;
 #include <sstream>
 #include <string>
 #include <syslog.h>
+#include <locale>
 #include <thread>
 #include <vector>
 #include <memory>
 
+
 export module logger;
 
-import std.locale;
-import std.locale.time;
 
 export class Logger final {
 

@@ -6,6 +6,7 @@ module;
 
 #include <atomic>
 #include <cstring>
+#include <cstdint>
 #include <deque>
 #include <functional>
 #include <map>
@@ -13,6 +14,7 @@ module;
 #include <mutex>
 #include <string>
 #include <thread>
+#include <vector>
 
 #include <cassert>
 #include <csignal>
