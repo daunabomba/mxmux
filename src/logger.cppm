@@ -14,6 +14,9 @@ module;
 
 export module logger;
 
+import std.locale;
+import std.locale.time;
+
 export class Logger final {
 
 public:
