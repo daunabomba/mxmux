@@ -132,7 +132,8 @@ void TcpStream::handleRead() {
                 client->received(Bytes(data.data(), data.data() + actuallyRead));
             }
             continue;
-        } else if (actuallyRead == -2) {
+        }
+        if (actuallyRead == 0 || actuallyRead == -2) {
             if (client) {
                 client->disconnected();
             }

@@ -285,33 +285,43 @@ void Engine::doStop() {
 void Engine::run(Runnable *const sock, const uint32_t events) {
     {
         std::lock_guard<std::mutex> sync(evHashLock);
-        auto const it = eventHash.find(sock->evId);
-        if (it == eventHash.end()) {
+        if (eventHash.find(sock->evId) == eventHash.end()) {
             return;
         }
     }
 
-    if ((events & EPOLLHUP) != 0 || (events & EPOLLRDHUP) != 0 || (events & EPOLLERR) != 0) {
+    // Drain any pending input before treating the connection as closed.
+    if ((events & EPOLLIN) != 0) {
+        sock->handleRead();
+    }
+
+    // A socket may be readable and writable at the same time.
+    if ((events & EPOLLOUT) != 0) {
+        sock->handleWrite();
+    }
+
+    // Handle closure/error only after draining pending reads.
+    if ((events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP)) != 0) {
         sock->handleError();
         pErrorLog("Engine::run", sock->getLastError(), sock->fd);
-    } else {
-        if ((events & EPOLLOUT) != 0) {
-            sock->handleWrite();
-        } else if ((events & (EPOLLIN)) != 0) {
-            sock->handleRead();
-        }
-        bool const needOut = sock->hasPolledOut();
-        bool const needIn = sock->hasRead();
+        return;
+    }
 
-        std::lock_guard<std::mutex> sync(evHashLock);
-        auto const it = eventHash.find(sock->evId);
-        if (it != eventHash.end()) {
-            epoll_event event = {(needOut ? EPOLLOUT : static_cast<decltype(EPOLLOUT)>(0)) |
-                                     (needIn ? EPOLLIN : static_cast<decltype(EPOLLIN)>(0)) | EPOLLONESHOT | EPOLLERR |
-                                     EPOLLHUP | EPOLLRDHUP | EPOLLET,
-                                 {.u64 = sock->evId}};
-            pErrorThrow("epoll_ctl mod", ::epoll_ctl(epollFd, EPOLL_CTL_MOD, sock->fd, &event), epollFd);
-        }
+    bool const needOut = sock->hasPolledOut();
+    bool const needIn = sock->hasRead();
+
+    std::lock_guard<std::mutex> sync(evHashLock);
+    auto const it = eventHash.find(sock->evId);
+    if (it != eventHash.end()) {
+        epoll_event event = {
+            (needOut ? EPOLLOUT : static_cast<decltype(EPOLLOUT)>(0)) |
+            (needIn ? EPOLLIN : static_cast<decltype(EPOLLIN)>(0)) |
+            EPOLLONESHOT | EPOLLERR | EPOLLHUP | EPOLLRDHUP | EPOLLET,
+            {.u64 = sock->evId}
+        };
+        pErrorThrow("epoll_ctl mod",
+                    ::epoll_ctl(epollFd, EPOLL_CTL_MOD, sock->fd, &event),
+                    epollFd);
     }
 }
 
