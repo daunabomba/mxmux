@@ -182,11 +182,12 @@ void MxArpWatch::scanExistingEntries() {
         }
 
         auto msg_len = static_cast<unsigned int>(n);
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wcast-align"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#pragma clang diagnostic ignored "-Wsign-conversion"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-align"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wconversion"
 #endif
         for (auto *h = reinterpret_cast<struct nlmsghdr *>(buf);
              NLMSG_OK(h, msg_len);
@@ -204,21 +205,22 @@ void MxArpWatch::scanExistingEntries() {
                 parseNeigh(h, targetIfIndex);
             }
         }
-#if defined(__clang__)
-#pragma clang diagnostic pop
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
 #endif
     }
     ::close(fd);
 }
 
 void MxArpWatch::parseNeigh(const nlmsghdr *h, unsigned int targetIfIndex) {
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wcast-align"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#pragma clang diagnostic ignored "-Wsign-conversion"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-align"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wconversion"
 #endif
-    auto const *ndm = reinterpret_cast<const struct ndmsg *>(NLMSG_DATA(h));
+    auto const *ndm = reinterpret_cast<const struct ndmsg *>(reinterpret_cast<const char *>(h) + NLMSG_HDRLEN);
     if (ndm->ndm_state & (NUD_FAILED | NUD_INCOMPLETE)) {
         return;
     }
@@ -242,14 +244,14 @@ void MxArpWatch::parseNeigh(const nlmsghdr *h, unsigned int targetIfIndex) {
     for (; RTA_OK(a, len); a = RTA_NEXT(a, len)) {
         if (a->rta_type == NDA_DST) {
             ip = RTA_DATA(a);
-            ip_len = RTA_PAYLOAD(a);
+            ip_len = static_cast<int>(RTA_PAYLOAD(a));
         } else if (a->rta_type == NDA_LLADDR) {
             mac = RTA_DATA(a);
-            mac_len = RTA_PAYLOAD(a);
+            mac_len = static_cast<int>(RTA_PAYLOAD(a));
         }
     }
-#if defined(__clang__)
-#pragma clang diagnostic pop
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
 #endif
 
     if (!ip || !mac || mac_len != static_cast<int>(MacAddress::MAC_ADDR_LEN)) {
