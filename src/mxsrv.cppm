@@ -123,14 +123,18 @@ void MxSrv::addRemote(std::size_t const index, std::uint16_t const remoteIndex, 
     outRemotes.emplace(index, MxRemote::create(*this, remoteIndex, addr, false));
     auto const interface = Socket::findArpInterface(addr);
     logError("Arpwatch interface check for " + std::string(interface));
-    if (!arpWatchFailed && interface.size() != 0 && !arpWatchers.contains(interface)) {
-        try {
-            auto ref = std::make_shared<MxArpWatch>(arpCache);
-            ArpSocket::create(interface, ref);
-            arpWatchers.emplace(interface, std::move(ref));
-        } catch (StringException const &ex) {
-            logError("Disabling arpwatch because " + std::string(ex.why()) + " and not root or cap_net_raw is not set");
-            arpWatchFailed = true;
+    if (!arpWatchFailed && interface.size() != 0) {
+        if (!arpWatchers.contains(interface)) {
+            try {
+                auto ref = std::make_shared<MxArpWatch>(arpCache, interface, addr.addr);
+                ArpSocket::create(interface, ref);
+                arpWatchers.emplace(interface, std::move(ref));
+            } catch (StringException const &ex) {
+                logError("Disabling arpwatch because " + std::string(ex.why()) + " and not root or cap_net_raw is not set");
+                arpWatchFailed = true;
+            }
+        } else {
+            arpWatchers[interface]->addWatchIp(addr.addr);
         }
     }
 }
