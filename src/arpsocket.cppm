@@ -4,6 +4,7 @@ module;
 #include <deque>
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 import utils;
 import socket;
@@ -41,6 +42,7 @@ private:
 private:
     std::string interface;
     std::shared_ptr<ArpSocketIf> client;
+    std::unordered_map<IpAddr, MacAddress, IpAddrHash> macTable;
 };
 
 void ArpSocket::create(std::string const &ifname, std::shared_ptr<ArpSocketIf> const &newClient) {
@@ -72,10 +74,15 @@ void ArpSocket::handleRead() {
     IpAddr ipAddr;
     MacAddress macAddress;
     if (receiveArp(ipAddr, macAddress)) {
-        logDebug("IP: " + ipAddr.to_string() + " MAC: " + macAddress.to_string());
+        auto it = macTable.find(ipAddr);
+        if (it == macTable.end() || it->second != macAddress) {
+            logDebug("IP: " + ipAddr.to_string() + " MAC: " + macAddress.to_string());
+            macTable[ipAddr] = macAddress;
+        }
         client->update(ipAddr, macAddress);
     }
 }
+
 void ArpSocket::handleError() {
     logDebug("ArpSocket::handleError() " + std::to_string(fd));
     assert(false && "Restart from init");

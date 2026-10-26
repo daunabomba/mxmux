@@ -270,5 +270,7 @@ struct MacAddress {
         return ss.str();
     }
 
+    bool operator==(MacAddress const &rhs) const = default;
+
     std::uint8_t mac[MAC_ADDR_LEN];
 };
