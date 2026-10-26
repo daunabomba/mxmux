@@ -59,6 +59,15 @@ src_install() {
     cmake_src_install
     systemd_dounit "${FILESDIR}/mxev.service"
 }
+
+pkg_postinst() {
+    fcaps_pkg_postinst
+
+    if [[ -f "${EROOT}/etc/mxev.conf" ]]; then
+        chown root:mxev "${EROOT}/etc/mxev.conf" || true
+        chmod 0640 "${EROOT}/etc/mxev.conf" || true
+    fi
+}
 __EOF__
 cat > mxev.service.skel << "__EOF__"
 [Unit]
@@ -74,7 +83,7 @@ IOSchedulingPriority=1
 User=mxev
 Group=mxev
 ExecStart=/usr/bin/mxev /etc/mxev.key /dev/input/by-id/usb-Gaming_KB_Gaming_KB-event-kbd /dev/input/by-id/usb-17ef_Lenovo_Optical_Mouse-event-mouse
-ExecStart=/usr/sbin/mxev /etc/mxev.key absent absent
+ExecStart=/usr/bin/mxev /etc/mxev.key absent absent
 
 [Install]
 WantedBy=multi-user.target
