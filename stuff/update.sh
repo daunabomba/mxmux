@@ -6,10 +6,10 @@ newver=$(expr 1 + "${ver}" 2>/dev/null || echo 0)
 mxev-sed() {
   case "$1" in
     usb)
-      sed '\|^ExecStart=/usr/sbin/mxev /etc/mxev.key absent absent$|d' "$2"
+      sed '\|^ExecStart=/usr/bin/mxev /etc/mxev.key absent|d' "$2"
       ;;
     absent)
-      sed '\|^ExecStart=/usr/bin/mxev /etc/mxev.key /dev/input/by-id/usb-Gaming_KB_Gaming_KB-event-kbd /dev/input/by-id/usb-17ef_Lenovo_Optical_Mouse-event-mouse$|d' "$2"
+      sed '\|^ExecStart=/usr/bin/mxev /etc/mxev.key /dev|d' "$2"
       ;;
     *)
       echo "usage: mxev-keep {usb|absent} FILE" >&2
