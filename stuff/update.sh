@@ -82,6 +82,7 @@ IOSchedulingClass=realtime
 IOSchedulingPriority=1
 User=mxev
 Group=mxev
+ExecStartPre=/usr/lib/systemd/systemd-networkd-wait-online --interface=eth0:routable --ipv4
 ExecStart=/usr/bin/mxev /etc/mxev.key /dev/input/by-id/usb-Gaming_KB_Gaming_KB-event-kbd /dev/input/by-id/usb-17ef_Lenovo_Optical_Mouse-event-mouse
 ExecStart=/usr/bin/mxev /etc/mxev.key absent absent
 
